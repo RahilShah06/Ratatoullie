@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WALL-E: Mission Protocol</title>
+    <title>WALL-E: MISSION PROTOCOL - HARDCORE</title>
     <style>
         * {
             margin: 0;
@@ -32,6 +32,26 @@
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
             background: #6b5a47;
             display: block;
+        }
+
+        /* Hard mode indicator */
+        #hardModeIndicator {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(255, 0, 0, 0.3);
+            color: #ff0000;
+            padding: 5px 15px;
+            border: 2px solid #ff0000;
+            border-radius: 20px;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+            z-index: 15;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; background: rgba(255, 0, 0, 0.5); }
         }
 
         /* ============================================
@@ -269,11 +289,23 @@
             0%, 50%, 100% { opacity: 1; }
             25%, 75% { opacity: 0.3; }
         }
+
+        .hardcore-tag {
+            background: #ff0000;
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- Hard Mode Indicator -->
+        <div id="hardModeIndicator">🔥 HARDCORE MODE 🔥</div>
         
         <!-- HUD Overlay -->
         <div id="hud">
@@ -286,7 +318,7 @@
             
             <!-- Battery Bar (only shown in battery missions) -->
             <div id="batteryContainer" class="hidden">
-                <div id="batteryLabel">⚡ BATTERY</div>
+                <div id="batteryLabel">⚡ BATTERY - DRAINING FAST!</div>
                 <div id="batteryBar">
                     <div id="batteryFill" style="width: 100%"></div>
                     <div id="batteryPercentage">100%</div>
@@ -297,8 +329,10 @@
         <!-- Start Screen -->
         <div id="startScreen">
             <h1>WALL-E</h1>
-            <h2>MISSION PROTOCOL</h2>
-            <p>Earth needs cleaning. Multiple missions await.</p>
+            <h2>HARDCORE PROTOCOL</h2>
+            <p style="color: #ff0000;">⚠️ EXTREME DIFFICULTY ⚠️</p>
+            <p>Earth needs cleaning. Missions are now much harder.</p>
+            <p>Battery drains 3x faster! Hazards spawn more frequently!</p>
             <div class="controls">
                 Use ARROW KEYS or WASD to move
             </div>
@@ -340,7 +374,7 @@
             context: null,
             sounds: {},
             enabled: true,
-            volume: 0.7,
+            volume: 0.8,
             
             init: function() {
                 this.context = new (window.AudioContext || window.webkitAudioContext)();
@@ -348,7 +382,6 @@
             },
             
             createSounds: function() {
-                // WALL-E robot sounds
                 this.sounds.walleBeep = { play: (vol) => this.playBeep(vol) };
                 this.sounds.walleMotor = { play: (vol) => this.playMotor(vol) };
                 this.sounds.walleCollect = { play: (vol) => this.playCollect(vol) };
@@ -357,6 +390,7 @@
                 this.sounds.walleLowBattery = { play: (vol) => this.playLowBattery(vol) };
                 this.sounds.walleVictory = { play: (vol) => this.playVictory(vol) };
                 this.sounds.walleSad = { play: (vol) => this.playSad(vol) };
+                this.sounds.walleCritical = { play: (vol) => this.playCritical(vol) };
             },
             
             playBeep: function(vol) {
@@ -404,7 +438,6 @@
                 if(!this.enabled) return;
                 const now = this.context.currentTime;
                 
-                // Happy ascending beep
                 const osc1 = this.context.createOscillator();
                 const osc2 = this.context.createOscillator();
                 const gain = this.context.createGain();
@@ -454,7 +487,6 @@
                 if(!this.enabled) return;
                 const now = this.context.currentTime;
                 
-                // Happy charging sound
                 const osc = this.context.createOscillator();
                 const gain = this.context.createGain();
                 
@@ -477,23 +509,45 @@
                 if(!this.enabled) return;
                 const now = this.context.currentTime;
                 
-                // Sad low battery beep
                 for(let i = 0; i < 3; i++) {
                     const osc = this.context.createOscillator();
                     const gain = this.context.createGain();
                     
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(330, now + i * 0.3);
-                    osc.frequency.setValueAtTime(220, now + i * 0.3 + 0.1);
+                    osc.frequency.setValueAtTime(330, now + i * 0.2);
+                    osc.frequency.setValueAtTime(220, now + i * 0.2 + 0.1);
                     
-                    gain.gain.setValueAtTime(0.15 * this.volume * vol, now + i * 0.3);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.3 + 0.15);
+                    gain.gain.setValueAtTime(0.2 * this.volume * vol, now + i * 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.15);
                     
                     osc.connect(gain);
                     gain.connect(this.context.destination);
                     
-                    osc.start(now + i * 0.3);
-                    osc.stop(now + i * 0.3 + 0.15);
+                    osc.start(now + i * 0.2);
+                    osc.stop(now + i * 0.2 + 0.15);
+                }
+            },
+            
+            playCritical: function(vol) {
+                if(!this.enabled) return;
+                const now = this.context.currentTime;
+                
+                for(let i = 0; i < 5; i++) {
+                    const osc = this.context.createOscillator();
+                    const gain = this.context.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440, now + i * 0.15);
+                    osc.frequency.setValueAtTime(220, now + i * 0.15 + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.25 * this.volume * vol, now + i * 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.12);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.context.destination);
+                    
+                    osc.start(now + i * 0.15);
+                    osc.stop(now + i * 0.15 + 0.12);
                 }
             },
             
@@ -501,23 +555,22 @@
                 if(!this.enabled) return;
                 const now = this.context.currentTime;
                 
-                // Happy victory melody
-                const notes = [523, 659, 784, 1047];
+                const notes = [523, 659, 784, 1047, 1318, 1568];
                 notes.forEach((freq, i) => {
                     const osc = this.context.createOscillator();
                     const gain = this.context.createGain();
                     
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, now + i * 0.15);
+                    osc.frequency.setValueAtTime(freq, now + i * 0.1);
                     
-                    gain.gain.setValueAtTime(0.2 * this.volume * vol, now + i * 0.15);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.2);
+                    gain.gain.setValueAtTime(0.2 * this.volume * vol, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.15);
                     
                     osc.connect(gain);
                     gain.connect(this.context.destination);
                     
-                    osc.start(now + i * 0.15);
-                    osc.stop(now + i * 0.15 + 0.2);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.15);
                 });
             },
             
@@ -525,8 +578,7 @@
                 if(!this.enabled) return;
                 const now = this.context.currentTime;
                 
-                // Sad descending notes
-                const notes = [440, 330, 220];
+                const notes = [440, 330, 220, 110];
                 notes.forEach((freq, i) => {
                     const osc = this.context.createOscillator();
                     const gain = this.context.createGain();
@@ -535,13 +587,13 @@
                     osc.frequency.setValueAtTime(freq, now + i * 0.2);
                     
                     gain.gain.setValueAtTime(0.15 * this.volume * vol, now + i * 0.2);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.25);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.2);
                     
                     osc.connect(gain);
                     gain.connect(this.context.destination);
                     
                     osc.start(now + i * 0.2);
-                    osc.stop(now + i * 0.2 + 0.25);
+                    osc.stop(now + i * 0.2 + 0.2);
                 });
             },
             
@@ -567,7 +619,7 @@
         };
 
         // ============================================
-        // GAME CONFIGURATION
+        // GAME CONFIGURATION - MUCH HARDER NOW!
         // ============================================
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -575,41 +627,42 @@
         const GAME_CONFIG = {
             width: canvas.width,
             height: canvas.height,
-            trashSpawnRate: 60,
-            hazardSpawnRate: 100,
-            batteryPackSpawnRate: 180,
-            maxTrashOnScreen: 10,
-            maxHazardsOnScreen: 6,
-            maxBatteryPacksOnScreen: 2,
+            trashSpawnRate: 30, // Faster spawn (was 60)
+            hazardSpawnRate: 40, // Much faster hazard spawn (was 100)
+            batteryPackSpawnRate: 250, // Slower battery spawn (was 180)
+            maxTrashOnScreen: 15, // More trash (was 10)
+            maxHazardsOnScreen: 12, // WAY more hazards (was 6)
+            maxBatteryPacksOnScreen: 1, // Less batteries (was 2)
+            hazardDamage: 2, // Each hazard takes 2 hearts (was 1)
         };
 
         // ============================================
-        // MISSION DEFINITIONS
+        // MISSION DEFINITIONS - HARDER DIFFICULTY
         // ============================================
         const MISSIONS = [
             {
                 id: 1,
                 name: "Basic Cleanup",
-                description: "Collect 15 trash items in 60 seconds",
-                timeLimit: 60,
-                objective: { type: 'collect', target: 15 },
+                description: "Collect 20 trash items in 45 seconds",
+                timeLimit: 45,
+                objective: { type: 'collect', target: 20 },
                 hasBattery: false,
                 difficulty: 'easy'
             },
             {
                 id: 2,
                 name: "Speed Cleaning",
-                description: "Collect 20 trash items in 45 seconds",
-                timeLimit: 45,
-                objective: { type: 'collect', target: 20 },
+                description: "Collect 30 trash items in 40 seconds",
+                timeLimit: 40,
+                objective: { type: 'collect', target: 30 },
                 hasBattery: false,
                 difficulty: 'medium'
             },
             {
                 id: 3,
                 name: "Survival Protocol",
-                description: "Survive for 60 seconds without dying",
-                timeLimit: 60,
+                description: "Survive for 90 seconds without dying",
+                timeLimit: 90,
                 objective: { type: 'survive' },
                 hasBattery: false,
                 difficulty: 'medium'
@@ -617,35 +670,35 @@
             {
                 id: 4,
                 name: "Battery Test",
-                description: "Collect 10 trash with limited battery (no timer)",
+                description: "Collect 20 trash with limited battery (no timer)",
                 timeLimit: null,
-                objective: { type: 'collect', target: 10 },
+                objective: { type: 'collect', target: 20 },
                 hasBattery: true,
-                batteryDrainRate: 0.15,
-                batteryMoveDrainRate: 0.4,
-                difficulty: 'medium'
+                batteryDrainRate: 2.5, // FAST drain (was 0.15)
+                batteryMoveDrainRate: 4.5, // VERY fast when moving (was 0.4)
+                difficulty: 'hard'
             },
             {
                 id: 5,
                 name: "Power Crisis",
-                description: "Collect 15 trash in 90 seconds with battery limits",
-                timeLimit: 90,
-                objective: { type: 'collect', target: 15 },
+                description: "Collect 25 trash in 60 seconds with battery limits",
+                timeLimit: 60,
+                objective: { type: 'collect', target: 25 },
                 hasBattery: true,
-                batteryDrainRate: 0.12,
-                batteryMoveDrainRate: 0.35,
+                batteryDrainRate: 2.8, // Even faster (was 0.12)
+                batteryMoveDrainRate: 5.0, // Extremely fast (was 0.35)
                 difficulty: 'hard'
             },
             {
                 id: 6,
                 name: "Ultimate Challenge",
-                description: "Score 25 points in 60 seconds with battery constraints",
-                timeLimit: 60,
-                objective: { type: 'score', target: 25 },
+                description: "Score 40 points in 45 seconds with battery constraints",
+                timeLimit: 45,
+                objective: { type: 'score', target: 40 },
                 hasBattery: true,
-                batteryDrainRate: 0.2,
-                batteryMoveDrainRate: 0.5,
-                difficulty: 'hard'
+                batteryDrainRate: 3.0, // MAXIMUM drain (was 0.2)
+                batteryMoveDrainRate: 6.0, // INSANE drain when moving (was 0.5)
+                difficulty: 'insane'
             }
         ];
 
@@ -664,24 +717,25 @@
         let battery = 100;
         let batteryDepleted = false;
         let lowBatteryPlayed = false;
+        let criticalBatteryPlayed = false;
 
         // ============================================
-        // PLAYER OBJECT - Realistic WALL-E design
+        // PLAYER OBJECT
         // ============================================
         const player = {
             x: GAME_CONFIG.width / 2,
             y: GAME_CONFIG.height / 2,
-            width: 40,  // Wider body
-            height: 45, // Taller
-            speed: 4,
-            color: '#cc9900', // WALL-E's yellow
+            width: 40,
+            height: 45,
+            speed: 5, // Slightly faster (was 4)
+            color: '#cc9900',
             trackColor: '#4a3a2a',
-            eyeDirection: 0, // For eye movement
-            treadRotation: 0, // For tread animation
+            eyeDirection: 0,
+            treadRotation: 0,
             isMoving: false,
             velocityX: 0,
             velocityY: 0,
-            armAngle: 0 // For arm animation
+            armAngle: 0
         };
 
         // ============================================
@@ -743,8 +797,16 @@
             MISSIONS.forEach(mission => {
                 const button = document.createElement('button');
                 button.className = 'missionButton';
+                
+                let difficultyTag = '';
+                if (mission.difficulty === 'hard') {
+                    difficultyTag = '<span class="hardcore-tag">🔥 HARD</span>';
+                } else if (mission.difficulty === 'insane') {
+                    difficultyTag = '<span class="hardcore-tag">💀 INSANE</span>';
+                }
+                
                 button.innerHTML = `
-                    <div class="missionName">Mission ${mission.id}: ${mission.name}</div>
+                    <div class="missionName">Mission ${mission.id}: ${mission.name} ${difficultyTag}</div>
                     <div class="missionDesc">${mission.description}</div>
                 `;
                 button.onclick = () => startMission(mission.id);
@@ -761,6 +823,7 @@
             battery = 100;
             batteryDepleted = false;
             lowBatteryPlayed = false;
+            criticalBatteryPlayed = false;
             frameCount = 0;
             timerFrameCount = 0;
             timeRemaining = currentMission.timeLimit;
@@ -774,6 +837,7 @@
             const batteryContainer = document.getElementById('batteryContainer');
             if (currentMission.hasBattery) {
                 batteryContainer.classList.remove('hidden');
+                document.getElementById('batteryLabel').innerHTML = '⚡ BATTERY - DRAINING FAST! ⚡';
             } else {
                 batteryContainer.classList.add('hidden');
             }
@@ -784,7 +848,6 @@
             gameState = 'playing';
             showScreen();
             
-            // Happy start beep
             SoundManager.play('walleBeep', 0.5);
             
             gameLoop();
@@ -870,8 +933,8 @@
             gameState = success ? 'missionComplete' : 'gameover';
 
             if (success) {
-                const timeBonus = currentMission.timeLimit ? Math.floor(timeRemaining * 2) : 0;
-                const batteryBonus = currentMission.hasBattery ? Math.floor(battery) : 0;
+                const timeBonus = currentMission.timeLimit ? Math.floor(timeRemaining * 3) : 0; // Bigger bonus
+                const batteryBonus = currentMission.hasBattery ? Math.floor(battery * 2) : 0; // Bigger bonus
                 const totalScore = score + timeBonus + batteryBonus;
 
                 document.getElementById('missionResult').innerHTML = `
@@ -921,12 +984,13 @@
                 batteryFill.classList.remove('low', 'medium');
                 if (battery <= 20) {
                     batteryFill.classList.add('low');
-                    // Play low battery warning every 5 seconds
-                    if (!lowBatteryPlayed && Math.floor(frameCount / 60) % 5 === 0) {
-                        SoundManager.play('walleLowBattery', 0.4);
+                    if (!lowBatteryPlayed) {
+                        SoundManager.play('walleLowBattery', 0.5);
                         lowBatteryPlayed = true;
-                    } else if (battery > 20) {
-                        lowBatteryPlayed = false;
+                    }
+                    if (battery <= 10 && !criticalBatteryPlayed) {
+                        SoundManager.play('walleCritical', 0.6);
+                        criticalBatteryPlayed = true;
                     }
                 } else if (battery <= 50) {
                     batteryFill.classList.add('medium');
@@ -952,7 +1016,7 @@
         }
 
         // ============================================
-        // BATTERY SYSTEM
+        // BATTERY SYSTEM - MUCH FASTER DRAIN
         // ============================================
         function updateBattery() {
             if (!currentMission || !currentMission.hasBattery) return;
@@ -961,6 +1025,7 @@
                 return;
             }
 
+            // Calculate drain rate - MUCH faster now!
             let drainThisFrame = currentMission.batteryDrainRate / 60;
             
             if (player.isMoving) {
@@ -1008,8 +1073,7 @@
                 moved = true;
             }
 
-            // Play motor sound occasionally when moving
-            if (moved && Math.random() < 0.01) {
+            if (moved && Math.random() < 0.02) {
                 SoundManager.play('walleMotor', 0.2);
             }
 
@@ -1019,16 +1083,15 @@
             player.x = Math.max(player.width / 2, Math.min(GAME_CONFIG.width - player.width / 2, player.x));
             player.y = Math.max(player.height / 2, Math.min(GAME_CONFIG.height - player.height / 2, player.y));
 
-            // Update animation values
             if (player.isMoving) {
-                player.treadRotation = (player.treadRotation + 0.2) % (Math.PI * 2);
-                player.eyeDirection = Math.sin(frameCount * 0.1) * 2;
-                player.armAngle = Math.sin(frameCount * 0.15) * 0.2;
+                player.treadRotation = (player.treadRotation + 0.3) % (Math.PI * 2);
+                player.eyeDirection = Math.sin(frameCount * 0.15) * 3;
+                player.armAngle = Math.sin(frameCount * 0.2) * 0.3;
             }
         }
 
         // ============================================
-        // SPAWN FUNCTIONS
+        // SPAWN FUNCTIONS - MORE AGGRESSIVE
         // ============================================
         function spawnTrash() {
             if (trashItems.length >= GAME_CONFIG.maxTrashOnScreen) return;
@@ -1081,7 +1144,7 @@
         }
 
         // ============================================
-        // COLLISION DETECTION
+        // COLLISION DETECTION - MORE DAMAGE
         // ============================================
         function checkCollisions() {
             for (let i = trashItems.length - 1; i >= 0; i--) {
@@ -1102,11 +1165,11 @@
                 
                 if (distance < player.width / 2 + hazard.size / 2) {
                     hazards.splice(i, 1);
-                    health--;
+                    health -= GAME_CONFIG.hazardDamage; // Takes 2 hearts!
                     updateUI();
-                    SoundManager.play('walleHurt', 0.4);
+                    SoundManager.play('walleHurt', 0.5);
                     
-                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
                     ctx.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.height);
                 }
             }
@@ -1117,7 +1180,7 @@
                 
                 if (distance < player.width / 2 + pack.size / 2) {
                     batteryPacks.splice(i, 1);
-                    battery = Math.min(100, battery + 30);
+                    battery = Math.min(100, battery + 20); // Less charge (was 30)
                     updateUI();
                     SoundManager.play('walleBattery', 0.4);
                     
@@ -1128,7 +1191,7 @@
         }
 
         // ============================================
-        // DRAWING FUNCTIONS - Realistic WALL-E
+        // DRAWING FUNCTIONS
         // ============================================
         function drawBackground() {
             ctx.fillStyle = '#6b5a47';
@@ -1146,56 +1209,43 @@
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            // Apply slight tilt when moving
             if (player.isMoving) {
-                ctx.rotate(Math.sin(frameCount * 0.1) * 0.02);
+                ctx.rotate(Math.sin(frameCount * 0.15) * 0.03);
             }
 
             if (currentMission && currentMission.hasBattery && battery <= 0) {
                 ctx.globalAlpha = 0.4;
             }
 
-            // Draw tracks first (WALL-E's tank-like treads)
             ctx.fillStyle = player.trackColor;
-            
-            // Left tread
             ctx.fillRect(-player.width / 2 - 5, -player.height / 3, 8, player.height * 0.7);
-            
-            // Right tread
             ctx.fillRect(player.width / 2 - 3, -player.height / 3, 8, player.height * 0.7);
             
-            // Tread details (moving lines)
             ctx.fillStyle = '#5a4a3a';
             if (player.isMoving) {
-                const offset = (frameCount * 2) % 20;
+                const offset = (frameCount * 3) % 20;
                 for (let i = 0; i < 3; i++) {
                     ctx.fillRect(-player.width / 2 - 3, -player.height / 3 + ((i * 15) + offset) % player.height, 4, 8);
                     ctx.fillRect(player.width / 2 - 1, -player.height / 3 + ((i * 15) + offset) % player.height, 4, 8);
                 }
             }
 
-            // Main body
             ctx.fillStyle = player.color;
             ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
             
-            // Body panels
             ctx.strokeStyle = '#b38633';
             ctx.lineWidth = 2;
             ctx.strokeRect(-player.width / 2 + 5, -player.height / 2 + 5, player.width - 10, player.height - 10);
 
-            // WALL-E's chest compartment
             ctx.fillStyle = '#4a3a2a';
             ctx.fillRect(-10, -10, 20, 20);
             
-            // WALL-E's iconic yellow eyes
             ctx.save();
             ctx.translate(-5, -15);
             
-            // Eye stalks
             ctx.fillStyle = '#b38633';
             ctx.fillRect(-2, -8, 4, 12);
             
-            // Eye balls (they move!)
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.arc(0 + player.eyeDirection, -10, 5, 0, Math.PI * 2);
@@ -1206,7 +1256,6 @@
             ctx.arc(0 + player.eyeDirection, -10, 3, 0, Math.PI * 2);
             ctx.fill();
             
-            // Second eye
             ctx.translate(10, 0);
             ctx.fillStyle = '#b38633';
             ctx.fillRect(-2, -8, 4, 12);
@@ -1223,7 +1272,6 @@
             
             ctx.restore();
 
-            // WALL-E's arms (simplified)
             ctx.strokeStyle = '#b38633';
             ctx.lineWidth = 6;
             ctx.beginPath();
@@ -1236,7 +1284,6 @@
             ctx.lineTo(player.width / 2 + 10 - Math.sin(player.armAngle) * 5, 5);
             ctx.stroke();
 
-            // WALL-E's hand scoops
             ctx.fillStyle = '#b38633';
             ctx.beginPath();
             ctx.ellipse(-player.width / 2 - 15 + Math.sin(player.armAngle) * 5, 8, 6, 3, 0, 0, Math.PI * 2);
@@ -1246,7 +1293,6 @@
             ctx.ellipse(player.width / 2 + 15 - Math.sin(player.armAngle) * 5, 8, 6, 3, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // WALL-E's tread wheels
             ctx.fillStyle = '#333';
             for (let i = -1; i <= 1; i += 2) {
                 ctx.beginPath();
@@ -1333,8 +1379,8 @@
 
         function drawBatteryPacks() {
             batteryPacks.forEach(pack => {
-                pack.pulsePhase = (pack.pulsePhase + 0.1) % (Math.PI * 2);
-                const pulseScale = 1 + Math.sin(pack.pulsePhase) * 0.2;
+                pack.pulsePhase = (pack.pulsePhase + 0.15) % (Math.PI * 2);
+                const pulseScale = 1 + Math.sin(pack.pulsePhase) * 0.25;
 
                 ctx.save();
                 ctx.translate(pack.x, pack.y);
@@ -1390,7 +1436,6 @@
             SoundManager.play('walleBeep', 0.3);
         });
 
-        // Add sound toggle button
         const soundBtn = document.createElement('button');
         soundBtn.id = 'soundToggle';
         soundBtn.textContent = '🔊 SOUND ON';
@@ -1403,12 +1448,11 @@
         soundBtn.onclick = () => SoundManager.toggleSound();
         document.getElementById('gameContainer').appendChild(soundBtn);
 
-        // Add volume slider
         const volumeSlider = document.createElement('input');
         volumeSlider.type = 'range';
         volumeSlider.min = '0';
         volumeSlider.max = '100';
-        volumeSlider.value = '70';
+        volumeSlider.value = '80';
         volumeSlider.style.position = 'absolute';
         volumeSlider.style.top = '50px';
         volumeSlider.style.right = '10px';
