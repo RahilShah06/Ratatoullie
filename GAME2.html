@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐼 KUNG FU PANDA 3D: SHADOW DUEL</title>
+    
+    <!-- Load Babylon.js first -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            background: #000;
+            color: white;
+        }
+        
+        #renderCanvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            touch-action: none;
+        }
+        
+        /* Screens */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Loading Screen */
+        #loadingScreen {
+            background: linear-gradient(135deg, #0a0f1f, #1a2a3a);
+            animation: gradientShift 3s infinite alternate;
+        }
+        
+        @keyframes gradientShift {
+            0% { background: linear-gradient(135deg, #0a0f1f, #1a2a3a); }
+            100% { background: linear-gradient(135deg, #1a2a3a, #2a0a0a); }
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #ffd700;
+        }
+        
+        .loading-bar-container {
+            width: 500px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            overflow: hidden;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffd700, #ff8800, #ff0000);
+            transition: width 0.3s;
+        }
+        
+        /* Menu Screen */
+        .menu-screen {
+            background: radial-gradient(circle at center, rgba(26, 42, 58, 0.95), rgba(10, 15, 31, 0.98));
+            backdrop-filter: blur(10px);
+        }
+        
+        .menu-content {
+            text-align: center;
+            animation: float 3s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .game-title {
+            font-size: 72px;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 30px #ffaa00, 0 0 60px #ff6600;
+            margin-bottom: 10px;
+        }
+        
+        .game-subtitle {
+            font-size: 36px;
+            color: #ff6600;
+            margin-bottom: 50px;
+            text-shadow: 0 0 20px #ff0000;
+        }
+        
+        .panda-character {
+            font-size: 140px;
+            margin-bottom: 30px;
+            animation: pandaSpin 15s linear infinite;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+        }
+        
+        @keyframes pandaSpin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+        
+        .menu-buttons {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .menu-btn, .gold-btn, .level-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ffd700, #ff8800);
+            border-radius: 50px;
+            border: 3px solid #fff;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            color: #000;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .menu-btn:hover, .gold-btn:hover, .level-btn:hover:not(:disabled) {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.7);
+        }
+        
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #2a2a4a, #1a1a2a);
+            padding: 40px 60px;
+            border-radius: 30px;
+            border: 4px solid #ffd700;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* World Map */
+        .map-content {
+            max-width: 95%;
+            padding: 30px;
+        }
+        
+        .map-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        
+        .level-card {
+            background: linear-gradient(135deg, #3a3a5a, #2a2a3a);
+            padding: 25px 20px;
+            border-radius: 20px;
+            border: 3px solid #ffd700;
+            width: 240px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .level-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.6);
+        }
+        
+        .level-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ffd700, #ff8800);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            font-size: 28px;
+            margin: 0 auto 15px;
+            color: #000;
+        }
+        
+        .level-card h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .reward {
+            margin: 15px 0;
+            font-size: 24px;
+            padding: 8px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+        }
+        
+        .level-btn {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 18px;
+            padding: 10px;
+        }
+        
+        .level-btn:disabled {
+            background: linear-gradient(135deg, #555, #333);
+            cursor: not-allowed;
+            opacity: 0.5;
+            border-color: #666;
+        }
+        
+        /* Game UI */
+        .game-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .health-bars {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .player-health-container,
+        .enemy-health-container {
+            flex: 1;
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7);
+        }
+        
+        .health-bar-bg {
+            height: 20px;
+            background: #2a0000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #000;
+        }
+        
+        .health-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+        
+        .player-health {
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff6600);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+        
+        .enemy-health {
+            background: linear-gradient(90deg, #ff0000, #ff6600, #ffaa00);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+        }
+        
+        .energy-bar-container {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            text-align: center;
+        }
+        
+        .energy-bar-bg {
+            height: 15px;
+            background: #1a2a3a;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+        
+        .energy-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00ffff, #0066ff);
+            transition: width 0.2s;
+        }
+        
+        .special-bar-container {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            text-align: center;
+        }
+        
+        .special-label {
+            color: #ff0000;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 0 15px #ff0000;
+        }
+        
+        .special-bar-bg {
+            width: 100%;
+            height: 18px;
+            background: #1a1a2a;
+            border-radius: 10px;
+            border: 2px solid #ff0000;
+            overflow: hidden;
+        }
+        
+        .special-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ffff, #0066ff);
+            transition: width 0.3s;
+        }
+        
+        .weapon-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 25px;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            font-size: 16px;
+            color: #ffd700;
+            white-space: nowrap;
+        }
+        
+        .combo-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff8800;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .pause-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #ffd700;
+            color: #ffd700;
+            font-size: 28px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s;
+        }
+        
+        .pause-btn:hover {
+            background: #ffd700;
+            color: #000;
+            transform: scale(1.1);
+        }
+        
+        input[type="text"] {
+            padding: 12px 20px;
+            font-size: 20px;
+            width: 300px;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 48px;
+            }
+            
+            .modal-content {
+                padding: 30px 20px;
+            }
+            
+            .level-card {
+                width: 200px;
+            }
+            
+            .weapon-indicator {
+                font-size: 14px;
+                white-space: normal;
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ================= LOADING SCREEN ================= -->
+<div class="screen" id="loadingScreen">
+    <div class="loading-content">
+        <h1 style="font-size: 64px; margin-bottom: 20px; text-shadow: 0 0 40px #ff0000;">🐼</h1>
+        <h2 style="font-size: 48px; margin-bottom: 10px;">KUNG FU PANDA 3D</h2>
+        <h3 style="font-size: 32px; margin-bottom: 30px; color: #ff6600;">SHADOW DUEL</h3>
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <p id="loadingText" style="margin-top: 20px; font-size: 20px;">Loading Epic Battle...</p>
+    </div>
+</div>
+
+<!-- ================= MAIN MENU ================= -->
+<div class="screen menu-screen hidden" id="menuScreen">
+    <div class="menu-content">
+        <div class="panda-character">🐼</div>
+        <h1 class="game-title">KUNG FU PANDA 3D</h1>
+        <h2 class="game-subtitle">SHADOW DUEL</h2>
+        <div class="menu-buttons">
+            <button class="menu-btn" onclick="showNameModal()">⚔️ START GAME</button>
+            <button class="menu-btn" onclick="showControls()">🎮 CONTROLS</button>
+        </div>
+        <div style="margin-top: 40px; color: #ffd700; font-size: 14px;">
+            <p>5 Epic Levels | Unlock Weapons | Master Combat</p>
+        </div>
+    </div>
+</div>
+
+<!-- ================= NAME INPUT MODAL ================= -->
+<div class="modal hidden" id="nameModal">
+    <div class="modal-content">
+        <h2 style="font-size: 32px; margin-bottom: 20px; color: #ffd700;">ENTER YOUR NAME</h2>
+        <input type="text" id="playerName" placeholder="Dragon Warrior" maxlength="20">
+        <br><br>
+        <button class="gold-btn" onclick="startGame()">BEGIN ADVENTURE</button>
+    </div>
+</div>
+
+<!-- ================= CONTROLS MODAL ================= -->
+<div class="modal hidden" id="controlsModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h2 style="font-size: 32px; margin-bottom: 20px; color: #ffd700;">⚔️ CONTROLS</h2>
+        
+        <div style="text-align: left; font-size: 16px; line-height: 2;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">🎮 MOVEMENT</h3>
+            <p><strong>W/A/S/D</strong> - Move (Smooth 8-directional)</p>
+            <p><strong>SPACE</strong> - Jump</p>
+            <p><strong>SHIFT</strong> - Dash with trail effect</p>
+            
+            <h3 style="color: #ffd700; margin: 15px 0 10px;">👊 COMBAT</h3>
+            <p><strong>J</strong> - Punch (12 damage)</p>
+            <p><strong>K</strong> - Kick (18 damage)</p>
+            <p><strong>L</strong> - Staff Weapon (28 damage, unlocks Level 2+)</p>
+            <p><strong>U</strong> - Special Dragon Attack (50 damage, needs full bar)</p>
+            
+            <h3 style="color: #ffd700; margin: 15px 0 10px;">💡 TIPS</h3>
+            <p>✨ Build special energy by hitting enemies</p>
+            <p>✨ Combos give bonus damage!</p>
+            <p>✨ Each level unlocks new weapons</p>
+            <p>✨ Watch for enemy attack patterns</p>
+        </div>
+        
+        <button class="gold-btn" onclick="hideControls()" style="margin-top: 20px;">GOT IT!</button>
+    </div>
+</div>
+
+<!-- ================= WORLD MAP (LEVEL SELECT) ================= -->
+<div class="modal hidden" id="worldMapModal">
+    <div class="modal-content map-content">
+        <h2 style="font-size: 36px; margin-bottom: 20px; color: #ffd700;">SELECT YOUR BATTLE</h2>
+        
+        <div class="map-container">
+            <!-- LEVEL 1 -->
+            <div class="level-card">
+                <div class="level-number">1</div>
+                <h3>VALLEY OF PEACE</h3>
+                <p style="color: #ff6600; margin: 5px 0;">VS SHADOW WARRIOR</p>
+                <p style="font-size: 12px; color: #aaa;">HP: 120 | Speed: Normal</p>
+                <div class="reward">🥊 FISTS</div>
+                <button class="level-btn" onclick="selectLevel(1)">FIGHT</button>
+            </div>
+
+            <!-- LEVEL 2 -->
+            <div class="level-card">
+                <div class="level-number">2</div>
+                <h3>TEMPLE OF DOOM</h3>
+                <p style="color: #ff6600; margin: 5px 0;">VS DARK ASSASSIN</p>
+                <p style="font-size: 12px; color: #aaa;">HP: 180 | Speed: Fast</p>
+                <div class="reward">🏮 STAFF</div>
+                <button class="level-btn" id="level2Btn" onclick="selectLevel(2)" disabled>LOCKED</button>
+            </div>
+
+            <!-- LEVEL 3 -->
+            <div class="level-card">
+                <div class="level-number">3</div>
+                <h3>DRAGON SHRINE</h3>
+                <p style="color: #ff6600; margin: 5px 0;">VS DEATH PANDA</p>
+                <p style="font-size: 12px; color: #aaa;">HP: 250 | Speed: Very Fast</p>
+                <div class="reward">🐉 DRAGON ENERGY</div>
+                <button class="level-btn" id="level3Btn" onclick="selectLevel(3)" disabled>LOCKED</button>
+            </div>
+
+            <!-- LEVEL 4 -->
+            <div class="level-card">
+                <div class="level-number">4</div>
+                <h3>INFERNO PIT</h3>
+                <p style="color: #ff6600; margin: 5px 0;">VS INFERNO DEMON</p>
+                <p style="font-size: 12px; color: #aaa;">HP: 350 | Speed: Extreme</p>
+                <div class="reward">🔥 FLAME POWER</div>
+                <button class="level-btn" id="level4Btn" onclick="selectLevel(4)" disabled>LOCKED</button>
+            </div>
+
+            <!-- LEVEL 5 -->
+            <div class="level-card">
+                <div class="level-number">5</div>
+                <h3>SHADOW REALM</h3>
+                <p style="color: #ff6600; margin: 5px 0;">VS LORD OF SHADOWS</p>
+                <p style="font-size: 12px; color: #aaa;">HP: 500 | Speed: MAXIMUM</p>
+                <div class="reward">👑 FINAL VICTORY</div>
+                <button class="level-btn" id="level5Btn" onclick="selectLevel(5)" disabled>LOCKED</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= GAME UI (IN-BATTLE) ================= -->
+<div class="game-ui hidden" id="gameUI">
+    <!-- Health Bars -->
+    <div class="health-bars">
+        <div class="player-health-container">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span id="playerNameLabel" style="font-weight: bold; color: #00ff00;">DRAGON WARRIOR</span>
+                <span id="playerHealthText" style="color: #fff;">100/100</span>
+            </div>
+            <div class="health-bar-bg">
+                <div class="health-fill player-health" id="playerHealthFill"></div>
+            </div>
+        </div>
+
+        <div class="enemy-health-container">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span id="enemyNameLabel" style="font-weight: bold; color: #ff0000;">SHADOW WARRIOR</span>
+                <span id="enemyHealthText" style="color: #fff;">120/120</span>
+            </div>
+            <div class="health-bar-bg">
+                <div class="health-fill enemy-health" id="enemyHealthFill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Energy Bar -->
+    <div class="energy-bar-container">
+        <div style="margin-bottom: 5px; color: #00ffff; font-weight: bold;">ENERGY</div>
+        <div class="energy-bar-bg">
+            <div class="energy-fill" id="energyFill"></div>
+        </div>
+    </div>
+
+    <!-- Special Energy Bar -->
+    <div class="special-bar-container">
+        <div class="special-label">SPECIAL ENERGY</div>
+        <div class="special-bar-bg">
+            <div class="special-fill" id="specialEnergyFill"></div>
+        </div>
+    </div>
+
+    <!-- Weapon/Status Indicator -->
+    <div class="weapon-indicator" id="weaponIndicator">
+        👊 J:Punch K:Kick | SHIFT:Dash
+    </div>
+
+    <!-- Combo Indicator -->
+    <div class="combo-indicator" id="comboIndicator">
+        1X COMBO!
+    </div>
+
+    <!-- Pause Button -->
+    <button class="pause-btn" onclick="pauseGame()">⏸️</button>
+</div>
+
+<!-- ================= PAUSE MODAL ================= -->
+<div class="modal hidden" id="pauseModal">
+    <div class="modal-content">
+        <h2 style="font-size: 48px; margin-bottom: 30px; color: #ffd700;">⏸️ PAUSED</h2>
+        <div class="menu-buttons" style="flex-direction: column; gap: 15px;">
+            <button class="gold-btn" onclick="resumeGame()">▶️ RESUME</button>
+            <button class="gold-btn" onclick="quitToMenu()">🏠 QUIT TO MENU</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= VICTORY MODAL ================= -->
+<div class="modal hidden" id="victoryModal">
+    <div class="modal-content">
+        <h2 style="font-size: 56px; margin-bottom: 20px; color: #ffd700; text-shadow: 0 0 30px #ffaa00;">🏆 VICTORY! 🏆</h2>
+        <p style="font-size: 28px; margin-bottom: 30px; color: #fff;">You have defeated the enemy!</p>
+        <p id="victoryUnlock" style="font-size: 22px; margin-bottom: 40px; color: #00ff00;">
+            ✨ LEVEL COMPLETE! +10 MAX HP!
+        </p>
+        <button class="gold-btn" onclick="continueAfterVictory()">CONTINUE ➡️</button>
+    </div>
+</div>
+
+<!-- ================= DEFEAT MODAL ================= -->
+<div class="modal hidden" id="defeatModal">
+    <div class="modal-content">
+        <h2 style="font-size: 56px; margin-bottom: 20px; color: #ff0000; text-shadow: 0 0 30px #ff0000;">💀 DEFEAT 💀</h2>
+        <p style="font-size: 28px; margin-bottom: 40px; color: #fff;">You have been defeated...</p>
+        <p style="font-size: 20px; margin-bottom: 40px; color: #aaa;">Train harder and try again!</p>
+        <button class="gold-btn" onclick="retry()">TRY AGAIN</button>
+    </div>
+</div>
+
+<!-- Canvas -->
+<canvas id="renderCanvas"></canvas>
+
+<!-- Game Script -->
+<script>
+// Game state
+const gameState = {
+    status: 'loading',
+    currentLevel: 1,
+    maxLevel: 5,
+    playerName: 'Dragon Warrior',
+    weapons: ['fists'],
+    playerHealth: 100,
+    maxPlayerHealth: 100,
+    enemyHealth: 100,
+    playerEnergy: 100,
+    specialEnergy: 0,
+    combo: 0,
+    lastHitTime: 0,
+    attackCooldowns: { punch: 0, kick: 0, weapon: 0, special: 0, dash: 0 },
+    keys: {},
+    player: null,
+    enemy: null,
+    scene: null,
+    camera: null,
+    gameStarted: false,
+    defeatShown: false,
+    victoryShown: false,
+    playerAttacking: false,
+    enemyAttacking: false,
+    isJumping: false,
+    isDashing: false,
+    playerVelocity: { x: 0, z: 0 },
+    audioContext: null,
+    sounds: {},
+    storyShown: {}
+};
+
+let engine, scene, canvas;
+
+// Level configurations
+const LEVEL_CONFIG = {
+    1: { 
+        name: 'SHADOW WARRIOR', 
+        health: 120, 
+        speed: 1.0, 
+        damage: 8, 
+        attackRate: 0.008,
+        story: "In the Valley of Peace, a dark shadow emerges. Your first test begins..."
+    },
+    2: { 
+        name: 'DARK ASSASSIN', 
+        health: 180, 
+        speed: 1.3, 
+        damage: 12, 
+        attackRate: 0.012,
+        story: "The temple burns. A deadly assassin stands before you, faster and deadlier than before..."
+    },
+    3: { 
+        name: 'DEATH PANDA', 
+        health: 250, 
+        speed: 1.5, 
+        damage: 16, 
+        attackRate: 0.015,
+        story: "At the Dragon Shrine, you face your darkest reflection. This is where legends are made..."
+    },
+    4: { 
+        name: 'INFERNO DEMON', 
+        health: 350, 
+        speed: 1.8, 
+        damage: 22, 
+        attackRate: 0.018,
+        story: "The ground cracks open. From the depths of the underworld, a demon of pure flame emerges!"
+    },
+    5: { 
+        name: 'LORD OF SHADOWS', 
+        health: 500, 
+        speed: 2.0, 
+        damage: 30, 
+        attackRate: 0.022,
+        story: "The final battle. The Lord of Shadows, master of all darkness. Only a true Dragon Warrior can prevail!"
+    }
+};
+
+// Audio System
+function initAudio() {
+    try {
+        gameState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('Audio initialized');
+    } catch (e) {
+        console.log('Audio not available');
+    }
+}
+
+function playSound(frequency, duration, type = 'sine') {
+    if (!gameState.audioContext) return;
+    
+    const oscillator = gameState.audioContext.createOscillator();
+    const gainNode = gameState.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(gameState.audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0.3, gameState.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, gameState.audioContext.currentTime + duration);
+    
+    oscillator.start(gameState.audioContext.currentTime);
+    oscillator.stop(gameState.audioContext.currentTime + duration);
+}
+
+function playHitSound() {
+    playSound(200, 0.1, 'square');
+    setTimeout(() => playSound(150, 0.1, 'square'), 50);
+}
+
+function playPunchSound() {
+    playSound(100, 0.15, 'triangle');
+}
+
+function playDashSound() {
+    playSound(400, 0.2, 'sawtooth');
+}
+
+function playSpecialSound() {
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => playSound(400 + i * 200, 0.2, 'sine'), i * 100);
+    }
+}
+
+function playBackgroundMusic() {
+    if (!gameState.audioContext) return;
+    
+    const notes = [262, 294, 330, 349, 392, 440, 494, 523];
+    let noteIndex = 0;
+    
+    setInterval(() => {
+        if (gameState.status === 'fighting') {
+            playSound(notes[noteIndex], 0.2, 'triangle');
+            noteIndex = (noteIndex + 1) % notes.length;
+        }
+    }, 500);
+}
+
+// Story narration system
+function showStoryNarration(text, duration = 5000) {
+    const narrationBox = document.createElement('div');
+    narrationBox.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,0,0,0.95));
+        border: 3px solid #ffd700;
+        border-radius: 20px;
+        padding: 40px 60px;
+        max-width: 700px;
+        z-index: 5000;
+        text-align: center;
+        box-shadow: 0 0 50px rgba(255,215,0,0.5), inset 0 0 30px rgba(255,0,0,0.3);
+        animation: fadeIn 0.5s;
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    narrationBox.innerHTML = `
+        <div style="font-size: 32px; color: #ffd700; margin-bottom: 20px; text-shadow: 0 0 20px #ff0000; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
+            LEVEL ${gameState.currentLevel}
+        </div>
+        <div style="font-size: 20px; color: #fff; font-style: italic; line-height: 1.6; text-shadow: 0 0 10px rgba(255,215,0,0.5);">
+            ${text}
+        </div>
+    `;
+    
+    document.body.appendChild(narrationBox);
+    
+    playSound(300, 0.5, 'sine');
+    setTimeout(() => playSound(400, 0.5, 'sine'), 200);
+    
+    setTimeout(() => {
+        narrationBox.style.animation = 'fadeOut 0.5s';
+        setTimeout(() => {
+            if (document.body.contains(narrationBox)) {
+                document.body.removeChild(narrationBox);
+            }
+        }, 500);
+    }, duration);
+}
+
+// UI Functions
+function showNameModal() {
+    document.getElementById('menuScreen').classList.add('hidden');
+    document.getElementById('nameModal').classList.remove('hidden');
+    if (!gameState.audioContext) initAudio();
+}
+
+function showControls() {
+    document.getElementById('controlsModal').classList.remove('hidden');
+}
+
+function hideControls() {
+    document.getElementById('controlsModal').classList.add('hidden');
+}
+
+function startGame() {
+    const name = document.getElementById('playerName').value || 'Dragon Warrior';
+    gameState.playerName = name;
+    document.getElementById('playerNameLabel').textContent = name.toUpperCase();
+    document.getElementById('nameModal').classList.add('hidden');
+    document.getElementById('worldMapModal').classList.remove('hidden');
+    if (!gameState.audioContext) initAudio();
+}
+
+function selectLevel(level) {
+    if (level > gameState.currentLevel) return;
+    
+    const config = LEVEL_CONFIG[level];
+    gameState.currentLevel = level;
+    gameState.enemyHealth = config.health;
+    gameState.playerHealth = gameState.maxPlayerHealth;
+    
+    document.getElementById('enemyNameLabel').textContent = config.name;
+    
+    startFight();
+}
+
+function startFight() {
+    document.getElementById('worldMapModal').classList.add('hidden');
+    document.getElementById('gameUI').classList.remove('hidden');
+    gameState.status = 'fighting';
+    gameState.gameStarted = true;
+    gameState.defeatShown = false;
+    gameState.victoryShown = false;
+    resetFight();
+    playBackgroundMusic();
+    
+    // Show story narration
+    const config = LEVEL_CONFIG[gameState.currentLevel];
+    if (!gameState.storyShown[gameState.currentLevel]) {
+        showStoryNarration(config.story);
+        gameState.storyShown[gameState.currentLevel] = true;
+    }
+    
+    if (gameState.camera) {
+        gameState.camera.alpha = -Math.PI/2;
+        gameState.camera.beta = Math.PI/3.5;
+        gameState.camera.radius = 15;
+        gameState.camera.target = new BABYLON.Vector3(0, 2, 0);
+    }
+}
+
+function resetFight() {
+    const config = LEVEL_CONFIG[gameState.currentLevel];
+    gameState.playerHealth = gameState.maxPlayerHealth;
+    gameState.enemyHealth = config.health;
+    gameState.playerEnergy = 100;
+    gameState.specialEnergy = 0;
+    gameState.combo = 0;
+    gameState.lastHitTime = 0;
+    gameState.playerVelocity = { x: 0, z: 0 };
+    
+    for (let key in gameState.attackCooldowns) {
+        gameState.attackCooldowns[key] = 0;
+    }
+    
+    updateUI();
+    
+    if (gameState.player) {
+        gameState.player.position = new BABYLON.Vector3(-5, 0, 0);
+        gameState.player.rotation.y = 0;
+    }
+    if (gameState.enemy) {
+        gameState.enemy.position = new BABYLON.Vector3(5, 0, 0);
+        gameState.enemy.rotation.y = Math.PI;
+    }
+}
+
+function pauseGame() {
+    if (gameState.status === 'fighting') {
+        gameState.status = 'paused';
+        document.getElementById('pauseModal').classList.remove('hidden');
+    }
+}
+
+function resumeGame() {
+    gameState.status = 'fighting';
+    document.getElementById('pauseModal').classList.add('hidden');
+}
+
+function quitToMenu() {
+    gameState.status = 'menu';
+    document.getElementById('pauseModal').classList.add('hidden');
+    document.getElementById('gameUI').classList.add('hidden');
+    document.getElementById('menuScreen').classList.remove('hidden');
+    resetFight();
+}
+
+function continueAfterVictory() {
+    document.getElementById('victoryModal').classList.add('hidden');
+    document.getElementById('worldMapModal').classList.remove('hidden');
+    document.getElementById('gameUI').classList.add('hidden');
+    gameState.victoryShown = false;
+    
+    // Heal player after victory
+    gameState.maxPlayerHealth = Math.min(150, gameState.maxPlayerHealth + 10);
+    gameState.playerHealth = gameState.maxPlayerHealth;
+    
+    updateLevelUnlocks();
+}
+
+function retry() {
+    document.getElementById('defeatModal').classList.add('hidden');
+    document.getElementById('gameUI').classList.add('hidden');
+    document.getElementById('worldMapModal').classList.remove('hidden');
+    gameState.defeatShown = false;
+    resetFight();
+}
+
+function updateLevelUnlocks() {
+    for (let i = 2; i <= gameState.maxLevel; i++) {
+        if (gameState.currentLevel >= i) {
+            const levelBtn = document.getElementById(`level${i}Btn`);
+            if (levelBtn) {
+                levelBtn.disabled = false;
+                levelBtn.textContent = 'FIGHT';
+            }
+        }
+    }
+}
+
+function updateUI() {
+    const config = LEVEL_CONFIG[gameState.currentLevel];
+    const playerHealthFill = document.getElementById('playerHealthFill');
+    const enemyHealthFill = document.getElementById('enemyHealthFill');
+    const playerHealthText = document.getElementById('playerHealthText');
+    const enemyHealthText = document.getElementById('enemyHealthText');
+    const energyFill = document.getElementById('energyFill');
+    const weaponIndicator = document.getElementById('weaponIndicator');
+    
+    if (playerHealthFill) playerHealthFill.style.width = Math.max(0, (gameState.playerHealth / gameState.maxPlayerHealth) * 100) + '%';
+    if (enemyHealthFill) enemyHealthFill.style.width = Math.max(0, (gameState.enemyHealth / config.health) * 100) + '%';
+    if (playerHealthText) {
+        playerHealthText.textContent = `${Math.max(0, Math.floor(gameState.playerHealth))}/${gameState.maxPlayerHealth}`;
+    }
+    if (enemyHealthText) {
+        enemyHealthText.textContent = `${Math.max(0, Math.floor(gameState.enemyHealth))}/${config.health}`;
+    }
+    if (energyFill) energyFill.style.width = gameState.playerEnergy + '%';
+    
+    const specialBar = document.getElementById('specialEnergyFill');
+    if (specialBar) {
+        specialBar.style.width = gameState.specialEnergy + '%';
+        if (gameState.specialEnergy >= 100) {
+            specialBar.style.background = 'linear-gradient(90deg, #ff0000, #ff9900, #ffff00)';
+        } else {
+            specialBar.style.background = 'linear-gradient(90deg, #00ffff, #0066ff)';
+        }
+    }
+    
+    if (weaponIndicator) {
+        if (gameState.specialEnergy >= 100) {
+            weaponIndicator.innerHTML = '⚡ SPECIAL READY! (Press U)';
+            weaponIndicator.style.animation = 'pulse 0.5s infinite';
+        } else if (gameState.weapons.includes('dragon')) {
+            weaponIndicator.innerHTML = '🐉 DRAGON ENERGY';
+        } else if (gameState.weapons.includes('staff')) {
+            weaponIndicator.innerHTML = '🏮 STAFF (L) | DASH (SHIFT)';
+        } else {
+            weaponIndicator.innerHTML = '👊 J:Punch K:Kick | SHIFT:Dash';
+        }
+    }
+}
+
+function performAttack(damage, attackType = 'punch') {
+    if (!gameState.player || !gameState.enemy || gameState.playerAttacking) return false;
+    
+    const distance = BABYLON.Vector3.Distance(gameState.player.position, gameState.enemy.position);
+    
+    if (distance < 4.5) {
+        gameState.playerAttacking = true;
+        playPunchSound();
+        
+        const originalPos = gameState.player.position.clone();
+        const direction = gameState.enemy.position.subtract(gameState.player.position).normalize();
+        
+        BABYLON.Animation.CreateAndStartAnimation(
+            "playerAttack",
+            gameState.player,
+            "position",
+            60,
+            8,
+            originalPos,
+            originalPos.add(direction.scale(attackType === 'special' ? 2.5 : 1.8)),
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        const arms = gameState.player.getChildMeshes().filter(m => m.name.includes('arm'));
+        if (arms.length > 0) {
+            BABYLON.Animation.CreateAndStartAnimation(
+                "armSwing",
+                arms[0],
+                "rotation.z",
+                60,
+                8,
+                0,
+                -2,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+        }
+        
+        setTimeout(() => {
+            gameState.enemyHealth = Math.max(0, gameState.enemyHealth - damage);
+            playHitSound();
+            
+            gameState.specialEnergy = Math.min(100, gameState.specialEnergy + 15);
+            
+            const knockbackDir = gameState.enemy.position.subtract(gameState.player.position).normalize();
+            const knockbackAmount = attackType === 'special' ? 1.5 : 0.6;
+            gameState.enemy.position.addInPlace(knockbackDir.scale(knockbackAmount));
+            
+            gameState.enemy.getChildMeshes().forEach(mesh => {
+                if (mesh.material) {
+                    mesh.material.emissiveColor = new BABYLON.Color3(1, 0, 0);
+                    setTimeout(() => {
+                        if (mesh.material) {
+                            mesh.material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+                        }
+                    }, 100);
+                }
+            });
+            
+            createBloodEffect(gameState.enemy.position);
+            
+            BABYLON.Animation.CreateAndStartAnimation(
+                "playerReturn",
+                gameState.player,
+                "position",
+                60,
+                12,
+                gameState.player.position,
+                originalPos,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            
+            if (arms.length > 0) {
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "armReturn",
+                    arms[0],
+                    "rotation.z",
+                    60,
+                    12,
+                    -2,
+                    0,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+            }
+            
+            setTimeout(() => {
+                gameState.playerAttacking = false;
+            }, 200);
+            
+            const now = Date.now();
+            if (now - gameState.lastHitTime < 1500) {
+                gameState.combo++;
+                const comboIndicator = document.getElementById('comboIndicator');
+                if (comboIndicator) {
+                    comboIndicator.textContent = `${gameState.combo}X COMBO! +${gameState.combo * 2} DMG`;
+                    comboIndicator.style.opacity = '1';
+                    comboIndicator.style.fontSize = (48 + gameState.combo * 4) + 'px';
+                    setTimeout(() => {
+                        comboIndicator.style.opacity = '0';
+                    }, 1000);
+                }
+                
+                gameState.enemyHealth = Math.max(0, gameState.enemyHealth - (gameState.combo * 2));
+            } else {
+                gameState.combo = 1;
+            }
+            gameState.lastHitTime = now;
+            
+            if (gameState.camera) {
+                const shakeAmount = attackType === 'special' ? 0.5 : 0.3;
+                gameState.camera.radius += shakeAmount;
+                setTimeout(() => {
+                    if (gameState.camera) gameState.camera.radius -= shakeAmount;
+                }, 50);
+            }
+            
+            updateUI();
+        }, 130);
+        
+        return true;
+    }
+    return false;
+}
+
+function performSpecialAttack() {
+    if (gameState.specialEnergy < 100 || gameState.playerAttacking) return false;
+    
+    playSpecialSound();
+    gameState.specialEnergy = 0;
+    
+    const wave = BABYLON.MeshBuilder.CreateSphere("wave", {diameter: 1}, gameState.scene);
+    wave.position = gameState.player.position.clone();
+    const waveMat = new BABYLON.StandardMaterial("waveMat", gameState.scene);
+    waveMat.emissiveColor = new BABYLON.Color3(1, 1, 0);
+    waveMat.alpha = 0.7;
+    wave.material = waveMat;
+    
+    BABYLON.Animation.CreateAndStartAnimation(
+        "waveExpand",
+        wave,
+        "scaling",
+        60,
+        30,
+        new BABYLON.Vector3(1, 1, 1),
+        new BABYLON.Vector3(8, 8, 8),
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    
+    setTimeout(() => {
+        wave.dispose();
+        performAttack(50, 'special');
+    }, 200);
+    
+    updateUI();
+    return true;
+}
+
+function performDash() {
+    if (gameState.isDashing || gameState.attackCooldowns.dash > 0) return;
+    
+    gameState.isDashing = true;
+    gameState.attackCooldowns.dash = 60;
+    playDashSound();
+    
+    const direction = new BABYLON.Vector3(
+        gameState.playerVelocity.x,
+        0,
+        gameState.playerVelocity.z
+    ).normalize();
+    
+    if (direction.length() === 0) {
+        direction.z = -1; // Default forward
+    }
+    
+    const dashDistance = 3;
+    const originalPos = gameState.player.position.clone();
+    const targetPos = originalPos.add(direction.scale(dashDistance));
+    
+    // Dash trail effect
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const trail = BABYLON.MeshBuilder.CreateBox("trail", {size: 0.5}, gameState.scene);
+            trail.position = gameState.player.position.clone();
+            const trailMat = new BABYLON.StandardMaterial("trailMat", gameState.scene);
+            trailMat.emissiveColor = new BABYLON.Color3(0, 1, 1);
+            trailMat.alpha = 0.5 - i * 0.1;
+            trail.material = trailMat;
+            
+            setTimeout(() => trail.dispose(), 300);
+        }, i * 30);
+    }
+    
+    BABYLON.Animation.CreateAndStartAnimation(
+        "dash",
+        gameState.player,
+        "position",
+        60,
+        10,
+        originalPos,
+        targetPos,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    
+    setTimeout(() => {
+        gameState.isDashing = false;
+    }, 200);
+}
+
+function createBloodEffect(position) {
+    if (!gameState.scene) return;
+    
+    const particleSystem = new BABYLON.ParticleSystem("blood", 50, gameState.scene);
+    particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", gameState.scene);
+    particleSystem.emitter = position.clone();
+    particleSystem.minEmitBox = new BABYLON.Vector3(-0.2, 0, -0.2);
+    particleSystem.maxEmitBox = new BABYLON.Vector3(0.2, 0.5, 0.2);
+    particleSystem.color1 = new BABYLON.Color4(0.8, 0, 0, 1);
+    particleSystem.color2 = new BABYLON.Color4(0.5, 0, 0, 1);
+    particleSystem.colorDead = new BABYLON.Color4(0.2, 0, 0, 0);
+    particleSystem.minSize = 0.1;
+    particleSystem.maxSize = 0.3;
+    particleSystem.minLifeTime = 0.2;
+    particleSystem.maxLifeTime = 0.5;
+    particleSystem.emitRate = 100;
+    particleSystem.gravity = new BABYLON.Vector3(0, -2, 0);
+    particleSystem.direction1 = new BABYLON.Vector3(-1, 1, -1);
+    particleSystem.direction2 = new BABYLON.Vector3(1, 2, 1);
+    particleSystem.minEmitPower = 2;
+    particleSystem.maxEmitPower = 4;
+    particleSystem.updateSpeed = 0.01;
+    particleSystem.start();
+    
+    setTimeout(() => {
+        particleSystem.stop();
+        setTimeout(() => particleSystem.dispose(), 500);
+    }, 200);
+}
+
+// Create enemy based on level
+function createEnemyPanda(scene, level) {
+    const group = new BABYLON.Mesh("enemyPanda", scene);
+    
+    const config = LEVEL_CONFIG[level];
+    const isInferno = level >= 4;
+    const isFinal = level === 5;
+    
+    const scale = 1 + (level - 1) * 0.1;
+    
+    const body = BABYLON.MeshBuilder.CreateCylinder("body", {height: 2.2 * scale, diameterTop: 1.4 * scale, diameterBottom: 1.2 * scale}, scene);
+    body.parent = group;
+    body.position.y = 1.1 * scale;
+    const bodyMaterial = new BABYLON.StandardMaterial("bodyMaterial", scene);
+    bodyMaterial.diffuseColor = isInferno ? new BABYLON.Color3(0.3, 0.05, 0.05) : new BABYLON.Color3(0.15, 0.15, 0.15);
+    bodyMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    bodyMaterial.emissiveColor = isInferno ? new BABYLON.Color3(0.2, 0.05, 0) : new BABYLON.Color3(0.05, 0, 0);
+    body.material = bodyMaterial;
+    
+    const head = BABYLON.MeshBuilder.CreateSphere("head", {diameter: 1.3 * scale, segments: 16}, scene);
+    head.parent = group;
+    head.position.y = 2.6 * scale;
+    const headMaterial = new BABYLON.StandardMaterial("headMaterial", scene);
+    headMaterial.diffuseColor = isInferno ? new BABYLON.Color3(0.4, 0.1, 0.1) : new BABYLON.Color3(0.2, 0.2, 0.2);
+    headMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+    if (isFinal) {
+        headMaterial.emissiveColor = new BABYLON.Color3(0.3, 0, 0.3);
+    }
+    head.material = headMaterial;
+    
+    // Eyes - more intense for higher levels
+    const eyeL = BABYLON.MeshBuilder.CreateSphere("eyeL", {diameter: 0.2 * scale}, scene);
+    eyeL.parent = group;
+    eyeL.position = new BABYLON.Vector3(-0.3 * scale, 2.7 * scale, 0.6 * scale);
+    const eyeMaterial = new BABYLON.StandardMaterial("eyeMaterial", scene);
+    eyeMaterial.emissiveColor = isFinal ? new BABYLON.Color3(1, 0, 1) : new BABYLON.Color3(1, 0, 0);
+    eyeMaterial.diffuseColor = isFinal ? new BABYLON.Color3(1, 0, 1) : new BABYLON.Color3(1, 0, 0);
+    eyeL.material = eyeMaterial;
+    
+    const eyeR = BABYLON.MeshBuilder.CreateSphere("eyeR", {diameter: 0.2 * scale}, scene);
+    eyeR.parent = group;
+    eyeR.position = new BABYLON.Vector3(0.3 * scale, 2.7 * scale, 0.6 * scale);
+    eyeR.material = eyeMaterial;
+    
+    // Horns for level 5
+    if (isFinal) {
+        const hornL = BABYLON.MeshBuilder.CreateCylinder("hornL", {height: 0.8, diameterTop: 0.05, diameterBottom: 0.15}, scene);
+        hornL.parent = group;
+        hornL.position = new BABYLON.Vector3(-0.4 * scale, 3.2 * scale, 0);
+        hornL.rotation.z = -0.5;
+        const hornMat = new BABYLON.StandardMaterial("hornMat", scene);
+        hornMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        hornMat.emissiveColor = new BABYLON.Color3(0.5, 0, 0.5);
+        hornL.material = hornMat;
+        
+        const hornR = BABYLON.MeshBuilder.CreateCylinder("hornR", {height: 0.8, diameterTop: 0.05, diameterBottom: 0.15}, scene);
+        hornR.parent = group;
+        hornR.position = new BABYLON.Vector3(0.4 * scale, 3.2 * scale, 0);
+        hornR.rotation.z = 0.5;
+        hornR.material = hornMat;
+    }
+    
+    const armMaterial = new BABYLON.StandardMaterial("armMaterial", scene);
+    armMaterial.diffuseColor = isInferno ? new BABYLON.Color3(0.2, 0.05, 0.05) : new BABYLON.Color3(0.1, 0.1, 0.1);
+    armMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    if (isInferno) {
+        armMaterial.emissiveColor = new BABYLON.Color3(0.15, 0.05, 0);
+    }
+    
+    const armL = BABYLON.MeshBuilder.CreateCylinder("armL", {height: 1.2 * scale, diameterTop: 0.35 * scale, diameterBottom: 0.45 * scale}, scene);
+    armL.parent = group;
+    armL.position = new BABYLON.Vector3(-0.9 * scale, 1.5 * scale, 0);
+    armL.rotation.z = 0.4;
+    armL.material = armMaterial;
+    
+    const armR = BABYLON.MeshBuilder.CreateCylinder("armR", {height: 1.2 * scale, diameterTop: 0.35 * scale, diameterBottom: 0.45 * scale}, scene);
+    armR.parent = group;
+    armR.position = new BABYLON.Vector3(0.9 * scale, 1.5 * scale, 0);
+    armR.rotation.z = -0.4;
+    armR.material = armMaterial;
+    
+    // Claws - more menacing for higher levels
+    const clawMat = new BABYLON.StandardMaterial("clawMat", scene);
+    clawMat.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.8);
+    clawMat.emissiveColor = isInferno ? new BABYLON.Color3(0.5, 0.3, 0) : new BABYLON.Color3(0.3, 0.3, 0.3);
+    
+    for (let i = 0; i < 3; i++) {
+        const claw = BABYLON.MeshBuilder.CreateCylinder("claw", {height: 0.3 * scale, diameter: 0.08 * scale}, scene);
+        claw.parent = group;
+        claw.position = new BABYLON.Vector3(-1.3 * scale + (i - 1) * 0.15 * scale, 0.6 * scale, 0.2 * scale);
+        claw.rotation.x = Math.PI / 6;
+        claw.material = clawMat;
+    }
+    
+    const aura = new BABYLON.ParticleSystem("aura", 100 + level * 20, scene);
+    aura.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+    aura.emitter = group;
+    aura.minEmitBox = new BABYLON.Vector3(-0.5 * scale, 0, -0.5 * scale);
+    aura.maxEmitBox = new BABYLON.Vector3(0.5 * scale, 2 * scale, 0.5 * scale);
+    aura.color1 = isFinal ? new BABYLON.Color4(0.5, 0, 0.5, 0.4) : new BABYLON.Color4(0.5, 0, 0, 0.3);
+    aura.color2 = isFinal ? new BABYLON.Color4(1, 0, 1, 0.6) : new BABYLON.Color4(1, 0, 0, 0.5);
+    aura.colorDead = new BABYLON.Color4(0, 0, 0, 0);
+    aura.minSize = 0.1;
+    aura.maxSize = 0.3;
+    aura.minLifeTime = 0.5;
+    aura.maxLifeTime = 1;
+    aura.emitRate = 20 + level * 5;
+    aura.gravity = new BABYLON.Vector3(0, 1, 0);
+    aura.direction1 = new BABYLON.Vector3(-0.5, 0.5, -0.5);
+    aura.direction2 = new BABYLON.Vector3(0.5, 1, 0.5);
+    aura.start();
+    
+    let glowIntensity = 0;
+    scene.registerBeforeRender(() => {
+        glowIntensity += 0.05 + level * 0.01;
+        if (isFinal) {
+            eyeMaterial.emissiveColor = new BABYLON.Color3(
+                1,
+                Math.abs(Math.sin(glowIntensity)) * 0.3,
+                1
+            );
+        } else {
+            eyeMaterial.emissiveColor = new BABYLON.Color3(
+                1,
+                Math.abs(Math.sin(glowIntensity)) * 0.3,
+                0
+            );
+        }
+    });
+    
+    return group;
+}
+
+function createHeroPanda(scene) {
+    const group = new BABYLON.Mesh("heroPanda", scene);
+    
+    const body = BABYLON.MeshBuilder.CreateCylinder("body", {height: 2.0, diameterTop: 1.3, diameterBottom: 1.1}, scene);
+    body.parent = group;
+    body.position.y = 1.0;
+    const bodyMaterial = new BABYLON.StandardMaterial("bodyMaterial", scene);
+    bodyMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+    bodyMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    body.material = bodyMaterial;
+    
+    const belly = BABYLON.MeshBuilder.CreateSphere("belly", {diameter: 1.0}, scene);
+    belly.parent = group;
+    belly.position = new BABYLON.Vector3(0, 1.2, 0.5);
+    belly.scaling = new BABYLON.Vector3(1, 1.2, 0.8);
+    const bellyMat = new BABYLON.StandardMaterial("bellyMat", scene);
+    bellyMat.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.15);
+    belly.material = bellyMat;
+    
+    const head = BABYLON.MeshBuilder.CreateSphere("head", {diameter: 1.2, segments: 16}, scene);
+    head.parent = group;
+    head.position.y = 2.4;
+    const headMaterial = new BABYLON.StandardMaterial("headMaterial", scene);
+    headMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+    headMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    head.material = headMaterial;
+    
+    const eyePatchL = BABYLON.MeshBuilder.CreateSphere("eyePatchL", {diameter: 0.45}, scene);
+    eyePatchL.parent = group;
+    eyePatchL.position = new BABYLON.Vector3(-0.3, 2.5, 0.55);
+    eyePatchL.scaling = new BABYLON.Vector3(1.2, 1.0, 0.5);
+    eyePatchL.material = bellyMat;
+    
+    const eyePatchR = BABYLON.MeshBuilder.CreateSphere("eyePatchR", {diameter: 0.45}, scene);
+    eyePatchR.parent = group;
+    eyePatchR.position = new BABYLON.Vector3(0.3, 2.5, 0.55);
+    eyePatchR.scaling = new BABYLON.Vector3(1.2, 1.0, 0.5);
+    eyePatchR.material = bellyMat;
+    
+    const eyeL = BABYLON.MeshBuilder.CreateSphere("eyeL", {diameter: 0.18}, scene);
+    eyeL.parent = group;
+    eyeL.position = new BABYLON.Vector3(-0.3, 2.55, 0.62);
+    const eyeLMaterial = new BABYLON.StandardMaterial("eyeLMaterial", scene);
+    eyeLMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1);
+    eyeLMaterial.emissiveColor = new BABYLON.Color3(0, 0.2, 0);
+    eyeL.material = eyeLMaterial;
+    
+    const eyeR = BABYLON.MeshBuilder.CreateSphere("eyeR", {diameter: 0.18}, scene);
+    eyeR.parent = group;
+    eyeR.position = new BABYLON.Vector3(0.3, 2.55, 0.62);
+    eyeR.material = eyeLMaterial;
+    
+    const armL = BABYLON.MeshBuilder.CreateCylinder("armL", {height: 1.1, diameterTop: 0.32, diameterBottom: 0.42}, scene);
+    armL.parent = group;
+    armL.position = new BABYLON.Vector3(-0.8, 1.4, 0);
+    armL.rotation.z = 0.35;
+    armL.material = bellyMat;
+    
+    const armR = BABYLON.MeshBuilder.CreateCylinder("armR", {height: 1.1, diameterTop: 0.32, diameterBottom: 0.42}, scene);
+    armR.parent = group;
+    armR.position = new BABYLON.Vector3(0.8, 1.4, 0);
+    armR.rotation.z = -0.35;
+    armR.material = bellyMat;
+    
+    let breathe = 0;
+    scene.registerBeforeRender(() => {
+        breathe += 0.02;
+        body.scaling.y = 1 + Math.sin(breathe) * 0.02;
+        head.position.y = 2.4 + Math.sin(breathe) * 0.03;
+    });
+    
+    return group;
+}
+
+// Enhanced battlefield with lava
+function createScene() {
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.05, 0.05, 0.08);
+    
+    const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI/2, Math.PI/3.5, 15, new BABYLON.Vector3(0, 2, 0), scene);
+    camera.attachControl(canvas, true);
+    camera.lowerRadiusLimit = 10;
+    camera.upperRadiusLimit = 25;
+    camera.lowerBetaLimit = 0.1;
+    camera.upperBetaLimit = Math.PI / 2.2;
+    
+    const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+    light1.intensity = 0.3;
+    light1.groundColor = new BABYLON.Color3(0.1, 0.05, 0.05);
+    
+    const spotlight = new BABYLON.SpotLight("spotlight", 
+        new BABYLON.Vector3(0, 20, 0), 
+        new BABYLON.Vector3(0, -1, 0), 
+        Math.PI / 3, 
+        2, 
+        scene
+    );
+    spotlight.intensity = 1.5;
+    spotlight.diffuse = new BABYLON.Color3(0.8, 0.6, 0.6);
+    
+    const rimLight = new BABYLON.DirectionalLight("rimLight", new BABYLON.Vector3(1, -0.5, 0), scene);
+    rimLight.position = new BABYLON.Vector3(-10, 10, -5);
+    rimLight.intensity = 0.8;
+    rimLight.diffuse = new BABYLON.Color3(0.8, 0.2, 0.2);
+    
+    const shadowGenerator = new BABYLON.ShadowGenerator(2048, spotlight);
+    shadowGenerator.useBlurExponentialShadowMap = true;
+    shadowGenerator.blurScale = 2;
+    shadowGenerator.darkness = 0.6;
+    
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 50, height: 50, subdivisions: 4}, scene);
+    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.15, 0.15);
+    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
+    groundMaterial.emissiveColor = new BABYLON.Color3(0.05, 0.02, 0.02);
+    ground.material = groundMaterial;
+    ground.receiveShadows = true;
+    
+    // LAVA RIVERS
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const lavaRiver = BABYLON.MeshBuilder.CreateBox("lava", {width: 2, height: 0.2, depth: 20}, scene);
+        lavaRiver.position = new BABYLON.Vector3(
+            Math.cos(angle) * 12,
+            0.1,
+            Math.sin(angle) * 12
+        );
+        lavaRiver.rotation.y = angle;
+        const lavaMat = new BABYLON.StandardMaterial("lavaMat", scene);
+        lavaMat.diffuseColor = new BABYLON.Color3(1, 0.2, 0);
+        lavaMat.emissiveColor = new BABYLON.Color3(1, 0.3, 0);
+        lavaRiver.material = lavaMat;
+        
+        // Lava bubbles
+        const lavaParticles = new BABYLON.ParticleSystem("lavaParticles", 100, scene);
+        lavaParticles.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+        lavaParticles.emitter = lavaRiver;
+        lavaParticles.minEmitBox = new BABYLON.Vector3(-1, 0, -10);
+        lavaParticles.maxEmitBox = new BABYLON.Vector3(1, 0, 10);
+        lavaParticles.color1 = new BABYLON.Color4(1, 0.5, 0, 1);
+        lavaParticles.color2 = new BABYLON.Color4(1, 0.2, 0, 1);
+        lavaParticles.colorDead = new BABYLON.Color4(0.2, 0, 0, 0);
+        lavaParticles.minSize = 0.2;
+        lavaParticles.maxSize = 0.5;
+        lavaParticles.minLifeTime = 0.5;
+        lavaParticles.maxLifeTime = 1.5;
+        lavaParticles.emitRate = 50;
+        lavaParticles.gravity = new BABYLON.Vector3(0, 2, 0);
+        lavaParticles.direction1 = new BABYLON.Vector3(-0.5, 0.5, -0.5);
+        lavaParticles.direction2 = new BABYLON.Vector3(0.5, 1, 0.5);
+        lavaParticles.start();
+        
+        // Animate lava glow
+        let lavaGlow = i * 2;
+        scene.registerBeforeRender(() => {
+            lavaGlow += 0.05;
+            lavaMat.emissiveColor = new BABYLON.Color3(
+                1,
+                0.3 + Math.sin(lavaGlow) * 0.2,
+                Math.abs(Math.sin(lavaGlow * 0.5)) * 0.2
+            );
+        });
+    }
+    
+    const arena = BABYLON.MeshBuilder.CreateCylinder("arena", {
+        height: 0.5,
+        diameter: 18,
+        tessellation: 8
+    }, scene);
+    arena.position.y = 0.25;
+    const arenaMaterial = new BABYLON.StandardMaterial("arenaMaterial", scene);
+    arenaMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.25, 0.25);
+    arenaMaterial.specularColor = new BABYLON.Color3(0.2, 0.1, 0.1);
+    arenaMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.05, 0.05);
+    arena.material = arenaMaterial;
+    arena.receiveShadows = true;
+    
+    // FLAME PILLARS around arena
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const torch = BABYLON.MeshBuilder.CreateCylinder("torch" + i, {
+            height: 3,
+            diameter: 0.2
+        }, scene);
+        torch.position = new BABYLON.Vector3(
+            Math.cos(angle) * 10,
+            1.5,
+            Math.sin(angle) * 10
+        );
+        const torchMat = new BABYLON.StandardMaterial("torchMat", scene);
+        torchMat.diffuseColor = new BABYLON.Color3(0.2, 0.1, 0.05);
+        torch.material = torchMat;
+        shadowGenerator.addShadowCaster(torch);
+        
+        const fire = BABYLON.MeshBuilder.CreateSphere("fire", {diameter: 0.5}, scene);
+        fire.position = new BABYLON.Vector3(
+            Math.cos(angle) * 10,
+            3.2,
+            Math.sin(angle) * 10
+        );
+        const fireMat = new BABYLON.StandardMaterial("fireMat", scene);
+        fireMat.emissiveColor = new BABYLON.Color3(1, 0.4, 0);
+        fireMat.diffuseColor = new BABYLON.Color3(1, 0.3, 0);
+        fire.material = fireMat;
+        
+        const fireParticles = new BABYLON.ParticleSystem("fireParticles", 50, scene);
+        fireParticles.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+        fireParticles.emitter = fire;
+        fireParticles.minEmitBox = new BABYLON.Vector3(-0.1, 0, -0.1);
+        fireParticles.maxEmitBox = new BABYLON.Vector3(0.1, 0, 0.1);
+        fireParticles.color1 = new BABYLON.Color4(1, 0.5, 0, 1);
+        fireParticles.color2 = new BABYLON.Color4(1, 0.3, 0, 1);
+        fireParticles.colorDead = new BABYLON.Color4(0.2, 0, 0, 0);
+        fireParticles.minSize = 0.1;
+        fireParticles.maxSize = 0.3;
+        fireParticles.minLifeTime = 0.3;
+        fireParticles.maxLifeTime = 0.8;
+        fireParticles.emitRate = 30;
+        fireParticles.gravity = new BABYLON.Vector3(0, 2, 0);
+        fireParticles.direction1 = new BABYLON.Vector3(-0.3, 0.5, -0.3);
+        fireParticles.direction2 = new BABYLON.Vector3(0.3, 1, 0.3);
+        fireParticles.start();
+        
+        let flicker = i * 1.5;
+        scene.registerBeforeRender(() => {
+            flicker += 0.1;
+            fireMat.emissiveColor = new BABYLON.Color3(
+                1,
+                0.4 + Math.sin(flicker) * 0.2,
+                Math.sin(flicker * 1.5) * 0.1
+            );
+            fire.scaling = new BABYLON.Vector3(
+                1 + Math.sin(flicker) * 0.1,
+                1 + Math.cos(flicker * 1.2) * 0.1,
+                1 + Math.sin(flicker * 0.8) * 0.1
+            );
+        });
+    }
+    
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+    scene.fogDensity = 0.02;
+    scene.fogColor = new BABYLON.Color3(0.05, 0.02, 0.02);
+    
+    const player = createHeroPanda(scene);
+    player.position = new BABYLON.Vector3(-5, 0, 0);
+    player.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8);
+    shadowGenerator.addShadowCaster(player, true);
+    
+    const enemy = createEnemyPanda(scene, gameState.currentLevel);
+    enemy.position = new BABYLON.Vector3(5, 0, 0);
+    enemy.rotation.y = Math.PI;
+    enemy.scaling = new BABYLON.Vector3(0.85, 0.85, 0.85);
+    shadowGenerator.addShadowCaster(enemy, true);
+    
+    gameState.scene = scene;
+    gameState.camera = camera;
+    gameState.player = player;
+    gameState.enemy = enemy;
+    
+    scene.registerBeforeRender(() => {
+        gameLoop();
+    });
+    
+    return scene;
+}
+
+// Enhanced game loop with smooth movement
+function gameLoop() {
+    if (!gameState.gameStarted || gameState.status !== 'fighting') return;
+    
+    for (let key in gameState.attackCooldowns) {
+        if (gameState.attackCooldowns[key] > 0) {
+            gameState.attackCooldowns[key]--;
+        }
+    }
+    
+    // IMPROVED MOVEMENT SYSTEM - Smooth and responsive
+    if (gameState.player && !gameState.playerAttacking && !gameState.isJumping && !gameState.isDashing) {
+        const acceleration = 0.015;
+        const maxSpeed = 0.12;
+        const friction = 0.85;
+        
+        // Input handling with velocity
+        if (gameState.keys['w']) {
+            gameState.playerVelocity.z -= acceleration;
+        }
+        if (gameState.keys['s']) {
+            gameState.playerVelocity.z += acceleration;
+        }
+        if (gameState.keys['a']) {
+            gameState.playerVelocity.x -= acceleration;
+        }
+        if (gameState.keys['d']) {
+            gameState.playerVelocity.x += acceleration;
+        }
+        
+        // Clamp velocity
+        gameState.playerVelocity.x = Math.max(-maxSpeed, Math.min(maxSpeed, gameState.playerVelocity.x));
+        gameState.playerVelocity.z = Math.max(-maxSpeed, Math.min(maxSpeed, gameState.playerVelocity.z));
+        
+        // Apply velocity
+        gameState.player.position.x += gameState.playerVelocity.x;
+        gameState.player.position.z += gameState.playerVelocity.z;
+        
+        // Apply friction
+        gameState.playerVelocity.x *= friction;
+        gameState.playerVelocity.z *= friction;
+        
+        // Rotation based on movement
+        if (Math.abs(gameState.playerVelocity.x) > 0.01 || Math.abs(gameState.playerVelocity.z) > 0.01) {
+            const targetAngle = Math.atan2(gameState.playerVelocity.x, -gameState.playerVelocity.z);
+            gameState.player.rotation.y = targetAngle;
+        }
+        
+        // Boundaries
+        gameState.player.position.x = Math.max(-7, Math.min(7, gameState.player.position.x));
+        gameState.player.position.z = Math.max(-7, Math.min(7, gameState.player.position.z));
+    }
+    
+    // Dash mechanic
+    if (gameState.keys['shift'] && !gameState.isDashing && !gameState.isJumping && !gameState.playerAttacking) {
+        performDash();
+    }
+    
+    // Jump
+    if (gameState.keys[' '] && !gameState.isJumping && !gameState.playerAttacking) {
+        gameState.isJumping = true;
+        playSound(300, 0.2, 'sine');
+        
+        const originalY = gameState.player.position.y;
+        BABYLON.Animation.CreateAndStartAnimation(
+            "jump",
+            gameState.player,
+            "position.y",
+            60,
+            30,
+            originalY,
+            originalY + 3,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        setTimeout(() => {
+            BABYLON.Animation.CreateAndStartAnimation(
+                "land",
+                gameState.player,
+                "position.y",
+                60,
+                20,
+                gameState.player.position.y,
+                originalY,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            
+            setTimeout(() => {
+                gameState.isJumping = false;
+                playSound(150, 0.1, 'square');
+            }, 333);
+        }, 500);
+    }
+    
+    // Enhanced Enemy AI based on level
+    const config = LEVEL_CONFIG[gameState.currentLevel];
+    if (gameState.enemy && gameState.player && !gameState.enemyAttacking) {
+        const distance = BABYLON.Vector3.Distance(gameState.player.position, gameState.enemy.position);
+        
+        if (distance > 3) {
+            const direction = gameState.player.position.subtract(gameState.enemy.position).normalize();
+            const speed = 0.04 * config.speed;
+            gameState.enemy.position.addInPlace(direction.scale(speed));
+            
+            const targetAngle = Math.atan2(direction.x, direction.z);
+            gameState.enemy.rotation.y = targetAngle;
+        }
+        
+        // Enemy attacks with config-based rates
+        if (distance < 4 && Math.random() < config.attackRate) {
+            gameState.enemyAttacking = true;
+            playPunchSound();
+            
+            const originalPos = gameState.enemy.position.clone();
+            const direction = gameState.player.position.subtract(gameState.enemy.position).normalize();
+            
+            BABYLON.Animation.CreateAndStartAnimation(
+                "enemyAttack",
+                gameState.enemy,
+                "position",
+                60,
+                10,
+                originalPos,
+                originalPos.add(direction.scale(1.5)),
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            
+            const arms = gameState.enemy.getChildMeshes().filter(m => m.name.includes('arm'));
+            if (arms.length > 1) {
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "enemyArmSwing",
+                    arms[1],
+                    "rotation.z",
+                    60,
+                    10,
+                    -0.4,
+                    -2.5,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+            }
+            
+            setTimeout(() => {
+                const hitDist = BABYLON.Vector3.Distance(gameState.player.position, gameState.enemy.position);
+                if (hitDist < 3.5) {
+                    gameState.playerHealth = Math.max(0, gameState.playerHealth - config.damage);
+                    playHitSound();
+                    
+                    const knockback = gameState.player.position.subtract(gameState.enemy.position).normalize();
+                    gameState.player.position.addInPlace(knockback.scale(0.5));
+                    
+                    if (gameState.camera) {
+                        gameState.camera.radius += 0.3;
+                        setTimeout(() => {
+                            if (gameState.camera) gameState.camera.radius -= 0.3;
+                        }, 50);
+                    }
+                }
+                
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "enemyReturn",
+                    gameState.enemy,
+                    "position",
+                    60,
+                    15,
+                    gameState.enemy.position,
+                    originalPos,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+                
+                if (arms.length > 1) {
+                    BABYLON.Animation.CreateAndStartAnimation(
+                        "enemyArmReturn",
+                        arms[1],
+                        "rotation.z",
+                        60,
+                        15,
+                        -2.5,
+                        -0.4,
+                        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                    );
+                }
+                
+                setTimeout(() => {
+                    gameState.enemyAttacking = false;
+                }, 250);
+                
+                updateUI();
+            }, 160);
+        }
+    }
+    
+    // Player attacks
+    if (gameState.player && gameState.enemy && !gameState.playerAttacking && !gameState.isJumping) {
+        if (gameState.keys['j'] && gameState.attackCooldowns.punch <= 0) {
+            performAttack(12, 'punch');
+            gameState.attackCooldowns.punch = 25;
+        }
+        
+        if (gameState.keys['k'] && gameState.attackCooldowns.kick <= 0) {
+            performAttack(18, 'kick');
+            gameState.attackCooldowns.kick = 30;
+        }
+        
+        if (gameState.keys['l'] && gameState.weapons.includes('staff') && 
+            gameState.attackCooldowns.weapon <= 0 && gameState.playerEnergy >= 20) {
+            if (performAttack(28, 'weapon')) {
+                gameState.attackCooldowns.weapon = 40;
+                gameState.playerEnergy = Math.max(0, gameState.playerEnergy - 20);
+            }
+        }
+        
+        if (gameState.keys['u'] && gameState.attackCooldowns.special <= 0) {
+            if (performSpecialAttack()) {
+                gameState.attackCooldowns.special = 120;
+            }
+        }
+    }
+    
+    // Energy regeneration
+    if (gameState.playerEnergy < 100) {
+        gameState.playerEnergy = Math.min(100, gameState.playerEnergy + 0.2);
+    }
+    
+    // Win/Loss
+    if (gameState.playerHealth <= 0 && !gameState.defeatShown && gameState.status === 'fighting') {
+        gameState.status = 'defeat';
+        gameState.defeatShown = true;
+        document.getElementById('defeatModal').classList.remove('hidden');
+        document.getElementById('gameUI').classList.add('hidden');
+    }
+    
+    if (gameState.enemyHealth <= 0 && !gameState.victoryShown && gameState.status === 'fighting') {
+        gameState.status = 'victory';
+        gameState.victoryShown = true;
+        playSpecialSound();
+        
+        const victoryUnlock = document.getElementById('victoryUnlock');
+        if (victoryUnlock) {
+            if (gameState.currentLevel === 1 && !gameState.weapons.includes('staff')) {
+                gameState.weapons.push('staff');
+                victoryUnlock.textContent = '🏮 UNLOCKED: MASTER STAFF! (Press L)';
+            } else if (gameState.currentLevel === 2 && !gameState.weapons.includes('dragon')) {
+                gameState.weapons.push('dragon');
+                victoryUnlock.textContent = '🐉 UNLOCKED: DRAGON ENERGY!';
+            } else if (gameState.currentLevel === 5) {
+                victoryUnlock.textContent = '🏆 YOU ARE THE ULTIMATE DRAGON WARRIOR!';
+            } else {
+                victoryUnlock.textContent = '✨ LEVEL COMPLETE! +10 MAX HP!';
+            }
+        }
+        
+        document.getElementById('victoryModal').classList.remove('hidden');
+        document.getElementById('gameUI').classList.add('hidden');
+        
+        if (gameState.currentLevel < gameState.maxLevel) {
+            gameState.currentLevel++;
+        }
+        updateLevelUnlocks();
+    }
+    
+    updateUI();
+}
+
+// Initialize
+window.addEventListener('load', () => {
+    console.log('🐼 KUNG FU PANDA 3D - SHADOW DUEL 💀');
+    
+    canvas = document.getElementById('renderCanvas');
+    engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, antialias: true });
+    
+    let loadProgress = 0;
+    const loadingBar = document.getElementById('loadingBar');
+    const loadingText = document.getElementById('loadingText');
+    const loadingScreen = document.getElementById('loadingScreen');
+    const menuScreen = document.getElementById('menuScreen');
+    
+    const loadingInterval = setInterval(() => {
+        loadProgress += 10;
+        if (loadingBar) loadingBar.style.width = loadProgress + '%';
+        
+        if (loadProgress >= 100) {
+            clearInterval(loadingInterval);
+            if (loadingText) loadingText.textContent = 'Ready to Fight!';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                menuScreen.classList.remove('hidden');
+            }, 500);
+        }
+    }, 200);
+    
+    // Create scene after a short delay to ensure everything is loaded
+    setTimeout(() => {
+        scene = createScene();
+    }, 100);
+    
+    document.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        gameState.keys[key] = true;
+        if ([' ', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'j', 'k', 'l', 'u'].includes(key)) {
+            e.preventDefault();
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        gameState.keys[key] = false;
+    });
+    
+    engine.runRenderLoop(() => {
+        if (scene) {
+            scene.render();
+        }
+    });
+    
+    window.addEventListener('resize', () => {
+        engine.resize();
+    });
+    
+    console.log('⚔️ Controls: WASD=Move (Smooth!), SHIFT=Dash, SPACE=Jump, J=Punch, K=Kick, L=Weapon, U=Special');
+});
+</script>
+
+</body>
+</html>
